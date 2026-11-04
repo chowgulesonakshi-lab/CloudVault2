@@ -1,0 +1,31 @@
+﻿.env
+.env.*
+!.env.example
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/storage/documents/*
+k8s/secret.yaml
+
+# Python virtual environments
+venv/
+.venv/
+
+# Node dependencies and build output
+node_modules/
+dist/
+build/
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Generated documents
+backend/storage/documents/*

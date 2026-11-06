@@ -1,6 +1,8 @@
-# ☁️ CloudVault- Document Management Platform
+# ☁️ CloudVault2 – Document Management Platform
 
-A full-stack document management platform built to simplify file storage, organization, and retrieval through a modern web interface and a RESTful backend. CloudVault combines **React, Flask, PostgreSQL, Docker, Kubernetes, and Jenkins** to demonstrate containerization, persistent metadata storage, deployment orchestration, and CI/CD automation.
+A full-stack document management platform built to simplify file storage, organization, and retrieval through a modern web interface and a RESTful backend.
+
+CloudVault2 combines **React, Flask, PostgreSQL, Docker, Kubernetes, and Jenkins** to demonstrate full-stack development, containerization, persistent metadata storage, deployment orchestration, and automated CI/CD.
 
 <p align="center">
   <strong>Upload · Organize · Retrieve · Deploy</strong>
@@ -17,7 +19,7 @@ A full-stack document management platform built to simplify file storage, organi
 - **🗄️ PostgreSQL Integration** — Store document metadata in a relational database.
 - **🐳 Containerized Backend** — Package and run the Flask API using Docker.
 - **☸️ Kubernetes Deployment** — Deploy backend and database resources using Kubernetes manifests.
-- **⚙️ CI/CD Automation** — Use Jenkins to automate validation, image building, and deployment steps.
+- **⚙️ Automated CI/CD** — Jenkins automates testing, frontend builds, Docker image creation, publishing, and Kubernetes deployment.
 
 ## 🏗️ Architecture
 
@@ -29,14 +31,18 @@ flowchart TD
     C --> E[Document File Storage]
 
     C --> F[Health Endpoint]
-    G[Jenkins Pipeline] --> H[Backend & Frontend Checks]
-    H --> I[Docker Image Build]
-    I --> J[Kubernetes Deployment]
-    J --> C
-    J --> D
+
+    G[GitHub Repository] --> H[Jenkins Pipeline]
+    H --> I[Backend Tests]
+    I --> J[Frontend Build]
+    J --> K[Docker Image Build]
+    K --> L[Docker Hub]
+    L --> M[Kubernetes Deployment]
+    M --> C
+    M --> D
 ```
 
-**How it works:** The frontend communicates with the Flask REST API. The backend manages document operations, stores file metadata in PostgreSQL, and saves uploaded files in backend storage. Docker packages the backend, while Kubernetes manifests describe the deployment resources and Jenkins automates the CI/CD workflow.
+**How it works:** The frontend communicates with the Flask REST API. The backend handles document operations, stores metadata in PostgreSQL, and saves uploaded files in backend storage. Docker packages the backend, while Kubernetes manages the application and database deployments. Jenkins automates the CI/CD workflow from source checkout to deployment verification.
 
 ## 🛠️ Tech Stack
 
@@ -48,12 +54,13 @@ flowchart TD
 | Containerization | Docker, Docker Compose |
 | Orchestration | Kubernetes, kubectl |
 | CI/CD | Jenkins |
-| Testing & Quality | pytest, ESLint, Vite production build |
+| Image Registry | Docker Hub |
+| Testing & Build | pytest, npm, ESLint, Vite |
 
 ## 📁 Project Structure
 
 ```text
-CloudVault/
+CloudVault2/
 ├── backend/
 │   ├── app.py
 │   ├── init_db.py
@@ -79,17 +86,16 @@ CloudVault/
 
 - Python 3.12
 - Node.js and npm
-- Docker Desktop with Docker Compose, or a local PostgreSQL installation
+- Docker Desktop with Docker Compose
 - Git
+- PostgreSQL (if running outside Docker)
 
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd CloudVault
+git clone https://github.com/chowgulesonakshi-lab/CloudVault2.git
+cd CloudVault2
 ```
-
-Replace the placeholder with your actual repository URL.
 
 ### 2. Start PostgreSQL
 
@@ -110,8 +116,11 @@ Open a separate PowerShell terminal:
 cd backend
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+
 python -m pip install -r requirements.txt
+
 $env:DATABASE_URL = "postgresql://postgres:choose-a-local-password@localhost:5433/cloudvault"
+
 python app.py
 ```
 
@@ -135,7 +144,7 @@ Open the local URL printed by Vite, typically:
 
 `http://localhost:5173`
 
-Keep the backend running at `http://localhost:5000` while using the frontend.
+Keep the backend running while using the frontend.
 
 ## 🔌 API Reference
 
@@ -172,6 +181,7 @@ Build the backend image and start the Compose services:
 
 ```powershell
 $env:POSTGRES_PASSWORD = "choose-a-local-password"
+
 docker build -t cloudvault-backend:latest backend
 docker compose up -d
 ```
@@ -188,94 +198,129 @@ PostgreSQL uses the `postgres_data` named volume. Uploaded documents are not cur
 
 ## ☸️ Kubernetes Deployment
 
-CloudVault includes Kubernetes manifests for PostgreSQL, the backend, and a NodePort service.
+CloudVault2 uses Kubernetes manifests to deploy the Flask backend and PostgreSQL database.
 
-After configuring the cluster, building the backend image for its container runtime, and ensuring that the manifests match the target environment, create the database Secret:
+The deployment runs in a dedicated namespace:
+
+`cloudvault2`
+
+This keeps CloudVault2's Kubernetes resources separate from the original CloudVault deployment.
+
+### 1. Create the namespace
 
 ```powershell
+kubectl create namespace cloudvault2
+```
+
+### 2. Configure database credentials
+
+Create a Kubernetes Secret for the PostgreSQL password:
+
+```powershell
+$password = Read-Host "Enter PostgreSQL password" -AsSecureString
+$plainPassword = [System.Net.NetworkCredential]::new("", $password).Password
+
 kubectl create secret generic cloudvault-db-secret `
-  --from-literal=POSTGRES_PASSWORD="choose-a-strong-password"
+  --namespace cloudvault2 `
+  --from-literal="POSTGRES_PASSWORD=$plainPassword"
+
+Remove-Variable password, plainPassword
 ```
 
-Apply the resources:
+### 3. Deploy the database and backend
 
 ```powershell
-kubectl apply -f k8s/postgres.yaml
-kubectl apply -f k8s/backend.yaml
-kubectl apply -f k8s/backend-service.yaml
+kubectl apply -n cloudvault2 -f k8s/postgres.yaml
+kubectl apply -n cloudvault2 -f k8s/backend.yaml
+kubectl apply -n cloudvault2 -f k8s/backend-service.yaml
 ```
 
-Verify the deployment:
+### 4. Verify the deployment
 
 ```powershell
-kubectl get pods
-kubectl get services
+kubectl get pods -n cloudvault2
+kubectl get deployments -n cloudvault2
+kubectl get services -n cloudvault2
 ```
 
-The backend service uses NodePort `30080`. The exact access address depends on your cluster configuration.
+### Kubernetes Configuration
 
-> **Deployment note:** Uploaded document files are not currently backed by a persistent volume in the Kubernetes backend configuration. Review storage, database credentials, networking, and application configuration before using this setup beyond a development environment.
+| Resource | Configuration |
+|---|---|
+| Namespace | `cloudvault2` |
+| Backend Deployment | `cloudvault-backend` |
+| Database Deployment | `cloudvault-db` |
+| Backend Service | `cloudvault-backend-service` |
+| Backend Service Type | NodePort |
+| Backend Container Port | `5000` |
+| Backend NodePort | `30081` |
+| Database Service | ClusterIP |
+| Database Port | `5432` |
+| Database Secret | `cloudvault-db-secret` |
 
-## ⚙️ CI/CD with Jenkins
+The backend uses PostgreSQL environment variables sourced from the Kubernetes Secret and connects to the database through the `cloudvault-db` Kubernetes service.
 
-The `Jenkinsfile` defines a pipeline for automating the project's build and deployment workflow.
+The NodePort is configured as `30081`. Actual external accessibility depends on the Kubernetes environment and networking configuration.
 
-The intended workflow includes:
+> **Storage note:** PostgreSQL uses persistent volume storage through a Kubernetes PersistentVolumeClaim. Uploaded document files are stored separately by the backend and are not currently backed by a dedicated persistent Kubernetes volume. Consider persistent file storage before using the application for important documents.
 
-1. Validate backend and frontend code.
-2. Build the backend Docker image.
-3. Apply Kubernetes resources.
+## ⚙️ CI/CD Pipeline with Jenkins
 
-The Jenkins agent must have the required Python, Node.js, Docker, and Kubernetes tooling configured. Ensure the pipeline's commands, credentials, image availability, and cluster access match your environment before running a deployment.
+CloudVault2 uses **Jenkins** to automate the application build, testing, containerization, and Kubernetes deployment process.
 
-## 🧪 Testing & Quality Checks
+The pipeline is defined in the root-level `Jenkinsfile` and retrieves source code directly from the CloudVault2 GitHub repository.
 
-### Backend tests
+### Pipeline Workflow
 
-Run from the `backend/` directory with the virtual environment activated and PostgreSQL available:
-
-```powershell
-python -m pytest
+```mermaid
+flowchart TD
+    A[GitHub Repository] --> B[Checkout]
+    B --> C[Backend Tests]
+    C --> D[Frontend Build]
+    D --> E[Docker Build]
+    E --> F[Docker Hub Push]
+    F --> G[Kubernetes Deploy]
+    G --> H[Deployment Verification]
 ```
 
-### Frontend checks
+### Pipeline Stages
 
-Run from the `frontend/` directory:
+| Stage | Description |
+|---|---|
+| Checkout | Clone the latest source code from the `main` branch. |
+| Backend Test | Install Python dependencies and execute pytest. |
+| Frontend Build | Install npm dependencies and generate the production build. |
+| Docker Build | Build the backend Docker image using a Jenkins build-number tag. |
+| Docker Hub Push | Authenticate and publish the image to Docker Hub. |
+| Kubernetes Deploy | Apply Kubernetes manifests and update the backend deployment. |
+| Verify | Check Kubernetes pods, services, deployment status, and deployed image. |
 
-```powershell
-npm run lint
-npm run build
+### Docker Image Versioning
+
+Docker images are tagged using Jenkins build numbers:
+
+```text
+codecurious06/cloudvault-backend:<BUILD_NUMBER>
 ```
 
-## 🔐 Security & Reliability
+This provides versioned images for deployment tracking and rollback.
 
-CloudVault is a development project, and several production-hardening steps remain:
+### Jenkins Configuration
 
-- Add authentication and authorization.
-- Validate uploads and enforce file-size and file-type restrictions.
-- Use secure configuration and secret management.
-- Add persistent storage for uploaded documents.
-- Configure production networking and HTTPS.
-- Add monitoring, logging, backups, and appropriate error handling.
+The Jenkins pipeline requires:
 
-Do not expose the current unauthenticated API to untrusted networks or use it to store sensitive documents without implementing suitable security controls.
+- Git access to the CloudVault2 repository.
+- Python and Node.js environments.
+- Docker Desktop and Docker CLI.
+- Kubernetes CLI (`kubectl`).
+- Docker Hub credentials configured in Jenkins.
+- Access to the target Kubernetes cluster.
+- Kubernetes configuration for the `docker-desktop` context.
 
-## 🎯 Project Goals
+The Docker Hub credentials are managed through Jenkins Credentials rather than being stored in the repository.
 
-CloudVault brings together full-stack development and infrastructure automation in one project. It provides hands-on experience with:
+### Triggering the Pipeline
 
-- Building and integrating a React frontend with a Flask REST API.
-- Managing relational data with PostgreSQL.
-- Packaging services with Docker and Docker Compose.
-- Defining deployments with Kubernetes.
-- Automating build and deployment workflows with Jenkins.
+The pipeline can be started manually using **Build Now** in Jenkins.
 
-## 👩‍💻 Author
-
-**Sonakshi Chowgule**
-
-Computer Science & Engineering | MIT-WPU
-
----
-
-*CloudVault — Making document management simple, structured, and deployable.*
+GitHub webhook-based automatic triggering is optional and is

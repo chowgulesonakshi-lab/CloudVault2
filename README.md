@@ -330,8 +330,85 @@ The Jenkins pipeline requires:
 
 The Docker Hub credentials are managed through Jenkins Credentials rather than being stored in the repository.
 
-### Triggering the Pipeline
+### ### Triggering the Pipeline
 
-The pipeline can be started manually using **Build Now** in Jenkins.
+The pipeline supports both automatic and manual execution:
 
-GitHub webhook-based automatic triggering is optional and is
+- **Automatic:** A push to the GitHub repository triggers Jenkins through the configured GitHub webhook.
+- **Manual:** The pipeline can be started anytime using **Build Now** in Jenkins.
+
+GitHub webhook-based triggering is optional. Manual execution remains available whenever automatic triggering is unavailable.
+
+### Build Retention
+
+Jenkins build history is configured to retain:
+
+- A maximum of 10 builds.
+- A maximum history period of 14 days.
+
+This helps control the growth of Jenkins build history.
+
+## 🧪 Testing & Quality Checks
+
+### Backend Tests
+
+Run from the `backend/` directory with the virtual environment activated and PostgreSQL available:
+
+```powershell
+python -m pytest
+```
+
+### Frontend Checks
+
+Run from the `frontend/` directory:
+
+```powershell
+npm run lint
+npm run build
+```
+
+The Jenkins pipeline automatically executes backend tests and the frontend production build before creating and publishing the Docker image.
+
+## 🔐 Security & Reliability
+
+CloudVault2 is a development project. Production-hardening improvements include:
+
+- Adding authentication and authorization.
+- Validating uploads and enforcing file-size and file-type restrictions.
+- Using secure configuration and secret management.
+- Adding persistent storage for uploaded documents.
+- Configuring production networking and HTTPS.
+- Adding monitoring, logging, backups, and appropriate error handling.
+- Implementing controlled access to Kubernetes and Jenkins.
+
+Do not expose the current API to untrusted networks or use it to store sensitive documents without suitable security controls.
+
+## 🎯 Project Goals
+
+CloudVault2 brings together full-stack development and infrastructure automation in one project.
+
+It demonstrates hands-on experience with:
+
+- Building a React frontend integrated with a Flask REST API.
+- Managing relational data with PostgreSQL.
+- Packaging services with Docker and Docker Compose.
+- Deploying containerized applications using Kubernetes.
+- Automating backend testing and frontend production builds.
+- Publishing versioned Docker images to Docker Hub.
+- Implementing an end-to-end Jenkins CI/CD pipeline.
+- Managing isolated Kubernetes deployments and deployment verification.
+
+---
+
+## 👩‍💻 Author
+
+**Sonakshi Chowgule**
+
+B.Tech Computer Science & Engineering  
+MIT World Peace University, Pune
+
+[GitHub](https://github.com/chowgulesonakshi-lab)
+
+<p align="center">
+  <em>CloudVault2 — Making document management simple, structured, and deployable. Built to learn. Automated to scale. ☁</em>
+</p>

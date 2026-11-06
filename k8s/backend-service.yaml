@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cloudvault-backend-service
+  namespace: cloudvault2
 spec:
   selector:
     app: cloudvault-backend
@@ -9,4 +10,4 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 30080
+      nodePort: 30081

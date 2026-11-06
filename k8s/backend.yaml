@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudvault-backend
+  namespace: cloudvault2
 spec:
   replicas: 1
   selector:
@@ -14,19 +15,28 @@ spec:
     spec:
       containers:
         - name: backend
-          image: codecurious06/cloudvault-backend:latest
+          image: codecurious06/cloudvault-backend:cloudvault2-v2
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
           env:
+            - name: POSTGRES_USER
+              value: postgres
+
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: cloudvault-db-secret
                   key: POSTGRES_PASSWORD
 
-            - name: DATABASE_URL
-              value: postgresql://postgres:$(POSTGRES_PASSWORD)@cloudvault-db:5432/cloudvault
+            - name: POSTGRES_HOST
+              value: cloudvault-db
+
+            - name: POSTGRES_PORT
+              value: "5432"
+
+            - name: POSTGRES_DB
+              value: cloudvault
 
           readinessProbe:
             httpGet:

@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/chowgulesonakshi-lab/CloudVault.git'
+                    url: 'https://github.com/chowgulesonakshi-lab/CloudVault2.git'
             }
         }
 

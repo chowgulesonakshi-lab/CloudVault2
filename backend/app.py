@@ -12,6 +12,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Database configuration
+from sqlalchemy.engine import URL
+
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
@@ -21,7 +23,17 @@ if database_url:
         1
     )
 
-if not database_url:
+elif os.getenv("POSTGRES_PASSWORD"):
+    database_url = URL.create(
+        drivername="postgresql+psycopg2",
+        username=os.getenv("POSTGRES_USER", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("POSTGRES_PORT", "5432")),
+        database=os.getenv("POSTGRES_DB", "cloudvault")
+    )
+
+else:
     database_url = "sqlite://"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url

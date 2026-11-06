@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -5,6 +6,7 @@ pipeline {
         DOCKER_IMAGE = 'codecurious06/cloudvault-backend'
         KUBECONFIG = 'C:\\Users\\Sonakshi\\.kube\\config'
         DOCKER_PATH = 'C:\\Users\\Sonakshi\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
+        K8S_NAMESPACE = 'cloudvault2'
     }
 
     stages {
@@ -38,7 +40,6 @@ pipeline {
                 bat '''
                     set "PATH=%DOCKER_PATH%;%PATH%"
                     docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% backend
-                    docker tag %DOCKER_IMAGE%:%BUILD_NUMBER% %DOCKER_IMAGE%:latest
                 '''
             }
         }
@@ -61,9 +62,6 @@ pipeline {
                         docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
                         if errorlevel 1 exit /b 1
 
-                        docker push %DOCKER_IMAGE%:latest
-                        if errorlevel 1 exit /b 1
-
                         docker logout
                     '''
                 }
@@ -77,12 +75,23 @@ pipeline {
                     set "KUBECONFIG=%KUBECONFIG%"
 
                     kubectl config use-context docker-desktop
-                    kubectl apply -f k8s/postgres.yaml
-                    kubectl apply -f k8s/backend.yaml
-                    kubectl apply -f k8s/backend-service.yaml
 
-                    kubectl set image deployment/cloudvault-backend backend=%DOCKER_IMAGE%:%BUILD_NUMBER%
-                    kubectl rollout status deployment/cloudvault-backend --timeout=180s
+                    kubectl create namespace %K8S_NAMESPACE% --dry-run=client -o yaml | kubectl apply -f -
+                    if errorlevel 1 exit /b 1
+
+                    kubectl apply -n %K8S_NAMESPACE% -f k8s/postgres.yaml
+                    if errorlevel 1 exit /b 1
+
+                    kubectl apply -n %K8S_NAMESPACE% -f k8s/backend.yaml
+                    if errorlevel 1 exit /b 1
+
+                    kubectl apply -n %K8S_NAMESPACE% -f k8s/backend-service.yaml
+                    if errorlevel 1 exit /b 1
+
+                    kubectl set image deployment/cloudvault-backend backend=%DOCKER_IMAGE%:%BUILD_NUMBER% -n %K8S_NAMESPACE%
+                    if errorlevel 1 exit /b 1
+
+                    kubectl rollout status deployment/cloudvault-backend -n %K8S_NAMESPACE% --timeout=180s
                 '''
             }
         }
@@ -91,10 +100,13 @@ pipeline {
             steps {
                 bat '''
                     set "PATH=%DOCKER_PATH%;%PATH%"
-                    kubectl get pods
-                    kubectl get services
-                    kubectl get deployment cloudvault-backend
-                    kubectl get deployment cloudvault-backend -o jsonpath="{.spec.template.spec.containers[0].image}"
+                    set "KUBECONFIG=%KUBECONFIG%"
+
+                    kubectl get pods -n %K8S_NAMESPACE%
+                    kubectl get services -n %K8S_NAMESPACE%
+                    kubectl get deployment cloudvault-backend -n %K8S_NAMESPACE%
+
+                    kubectl get deployment cloudvault-backend -n %K8S_NAMESPACE% -o jsonpath="{.spec.template.spec.containers[0].image}"
                 '''
             }
         }
@@ -102,10 +114,10 @@ pipeline {
 
     post {
         success {
-            echo 'CloudVault CI/CD pipeline completed successfully!'
+            echo 'CloudVault2 CI/CD pipeline completed successfully!'
         }
         failure {
-            echo 'CloudVault pipeline failed. Check the failed stage logs.'
+            echo 'CloudVault2 pipeline failed. Check the failed stage logs.'
         }
     }
 }

@@ -323,4 +323,76 @@ The Docker Hub credentials are managed through Jenkins Credentials rather than b
 
 The pipeline can be started manually using **Build Now** in Jenkins.
 
-GitHub webhook-based automatic triggering is optional and is
+GitHub webhook-based automatic triggering is optional and is not required for manual pipeline execution.
+
+### Build Retention
+
+Jenkins build history is configured to retain:
+
+- A maximum of 10 builds.
+- A maximum history period of 14 days.
+
+This helps control the growth of Jenkins build history.
+
+## 🧪 Testing & Quality Checks
+
+### Backend Tests
+
+Run from the `backend/` directory with the virtual environment activated and PostgreSQL available:
+
+```powershell
+python -m pytest
+```
+
+### Frontend Checks
+
+Run from the `frontend/` directory:
+
+```powershell
+npm run lint
+npm run build
+```
+
+The Jenkins pipeline automatically executes the backend tests and frontend production build before creating and publishing the Docker image.
+
+## 🔐 Security & Reliability
+
+CloudVault2 is a development project. Several production-hardening steps remain:
+
+- Add authentication and authorization.
+- Validate uploads and enforce file-size and file-type restrictions.
+- Use secure configuration and secret management.
+- Add persistent storage for uploaded documents.
+- Configure production networking and HTTPS.
+- Add monitoring, logging, backups, and appropriate error handling.
+- Implement controlled access to the Kubernetes cluster and Jenkins instance.
+
+Do not expose the current unauthenticated API to untrusted networks or use it to store sensitive documents without implementing suitable security controls.
+
+## 🎯 Project Goals
+
+CloudVault2 brings together full-stack development and infrastructure automation in one project.
+
+It demonstrates hands-on experience with:
+
+- Building and integrating a React frontend with a Flask REST API.
+- Managing relational data with PostgreSQL.
+- Packaging services with Docker and Docker Compose.
+- Deploying containerized applications using Kubernetes.
+- Automating backend testing and frontend production builds.
+- Publishing versioned Docker images to Docker Hub.
+- Implementing an end-to-end Jenkins CI/CD pipeline.
+- Managing isolated Kubernetes deployments and deployment verification.
+
+## 👩‍💻 Author
+
+**Sonakshi Chowgule**
+
+Computer Science & Engineering  
+MIT World Peace University, Pune
+
+---
+
+<p align="center">
+  <em>CloudVault2 — Making document management simple, structured, and deployable.</em>
+</p>
